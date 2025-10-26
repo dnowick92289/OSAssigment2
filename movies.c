@@ -9,6 +9,14 @@
 prints each line in that file.
 * You can use this code however you want in your Prog Assignment 2.
 */
+
+static void printMenu(void) {
+    printf("1. Show movies released in the specified year\n");
+    printf("2. Show highest rated movie for each year\n");
+    printf("3. Show the title and year of releae of all movies in a specific language\n");
+    printf("4. Exit from the program\n\n");
+    printf("Enter a choice from 1 to 4");
+}
 void processMovieFile(char* filePath){
 char *currLine = NULL;
 size_t len = 0;
@@ -41,6 +49,32 @@ free(currLine);
 fclose(movieFile);
 
 printf("\nProcessed file %s and parsed data for %d movies \n\n", filePath, movieCount);
+
+int choice;
+while (1) {
+    printMenu();
+    if (scanf("%d", &choice) != 1) return;
+
+    if (choice == 4) break;
+    if (choice < 1 || choice > 4) {
+        printf("You've entered an incorrect choice, try again \n\n");
+        continue;
+
+    }
+    if (choice == 1){
+        printf("Enter the year you want to see movies: ");
+        int year; scanf("%d", &year);
+        printf("\n");
+    } else if (choice == 2) {
+        printf("\n");
+    } else if (choice == 3){
+        printf("Enter the language for which you want to see movies: ");
+        char lang[64]; scanf("%63s", lang);
+        printf("\n");
+    }
+}
+    
+
 }
 /**
 *
