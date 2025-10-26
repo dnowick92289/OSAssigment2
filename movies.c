@@ -1,5 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h> // for EXIT_SUCCESS and EXIT_FAILURE
+#define MAX_LANGS 5
+#define MAX_LANG_LEN 20
+
+struct movie {
+    char *title;
+    int year;
+    char *langugages[MAX_LANGS];
+    int lang_count;
+    double rating;
+    struct movie *next;
+};
+
 /*
 * Function: processMovieFile
 * Opens a file, reads and prints each line
