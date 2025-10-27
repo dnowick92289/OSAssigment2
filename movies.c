@@ -185,7 +185,7 @@ void processMovieFile(char* filePath){
         if (choice == 1){
             printf("Enter the year you want to see movies: ");
             int year; scanf("%d", &year);
-            printf("\n");
+            showByYear(head, year);
 
         } else if (choice == 2) {
             printf("\n");
