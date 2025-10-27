@@ -122,6 +122,39 @@ static void showByYear(struct movie *head, int year) {
     printf("\n"); // keep the blank line like the sample runs
 }
 
+static void showHighestPerYear(struct movie *head) {
+    const int YMIN = 1900, YMAX = 2021;
+    const int RANGE = (YMAX - YMIN + 1);
+
+    double bestRating[RANGE];
+    struct movie *bestMovie[RANGE];
+
+    // init: no movie for any year yet
+    for (int i = 0; i < RANGE; i++) {
+        bestRating[i] = -1.0;   // sentinel below valid range [1..10]
+        bestMovie[i] = NULL;
+    }
+
+    // single pass over the list
+    for (struct movie *m = head; m; m = m->next) {
+        if (m->year < YMIN || m->year > YMAX) continue; // safety per spec
+        int idx = m->year - YMIN;
+        if (m->rating > bestRating[idx]) {
+            bestRating[idx] = m->rating;
+            bestMovie[idx] = m;
+        }
+    }
+
+    // print results for years we saw at least one movie
+    for (int i = 0; i < RANGE; i++) {
+        if (bestMovie[i]) {
+            int year = YMIN + i;
+            printf("%d %.1f %s\n", year, bestRating[i], bestMovie[i]->title);
+        }
+    }
+    printf("\n"); // keep spacing consistent with the sample
+}
+
 
 void processMovieFile(char* filePath){
     char *currLine = NULL;
@@ -188,7 +221,8 @@ void processMovieFile(char* filePath){
             showByYear(head, year);
 
         } else if (choice == 2) {
-            printf("\n");
+            showHighestPerYear(head);
+
         } else if (choice == 3){
             printf("Enter the language for which you want to see movies: ");
             char lang[64]; scanf("%63s", lang);
