@@ -1,19 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h> // for EXIT_SUCCESS and EXIT_FAILURE
+#include <string.h>
+#include <ctype.h>
 #define MAX_LANGS 5
 #define MAX_LANG_LEN 20
 
 struct movie {
     char *title;
     int year;
-    char *langugages[MAX_LANGS];
+    char *languages[MAX_LANGS];
     int lang_count;
     double rating;
     struct movie *next;
 };
 
-#include <string.h>
-#include <ctype.h>
+/*Helpers for parsing*/
 
 static char *dupstr(const char *s) {
     char *p = malloc(strlen(s) + 1);
@@ -24,10 +25,10 @@ static char *dupstr(const char *s) {
 static void parseLanguages(const char *src, char *out[], int *count) {
     *count = 0;
     size_t n =strlen(src);
-    if (n < 2 || src[0] != '[' || src[n-1] != ']')return;
+    if (n < 2 || src[0] != '[' || src[n - 1] != ']')return;
 
     char *buf = dupstr(src + 1);
-    buf[n-2] = '\0';
+    buf[n - 2] = '\0';
 
     char *save = NULL;
     char *tok = strtok_r(buf, ";", &save);
@@ -98,6 +99,8 @@ static void printMenu(void) {
     printf("4. Exit from the program\n\n");
     printf("Enter a choice from 1 to 4");
 }
+
+
 void processMovieFile(char* filePath){
 char *currLine = NULL;
 size_t len = 0;
@@ -113,59 +116,57 @@ if (!movieFile) {
 
 // Read the file and discard header line
 nread = getline(&currLine, &len, movieFile);
-if (nread <= 0) {
+    // --- read & discard the header line ---
+    if (nread <= 0) {
+        free(currLine);
+        fclose(movieFile);
+        fprintf(stderr, "Empty or unreadable file\n");
+        return;
+    }
+
+    while ((nread = getline(&currLine, &len, movieFile)) != -1) {
+        movieCount++;
+    }
+
     free(currLine);
     fclose(movieFile);
-    fprintf(stderr, "Empty or unreadable file\n");
-    return;
-}
 
-while((nread =getline(&currLine, &len, movieFile)) != -1){
-    movieCount++;
-}
+    printf("Processed file %s and parsed data for %d movies\n\n", filePath, movieCount);
 
-// Free the memory allocated by getline for currLine
-free(currLine);
-// Close the file
-fclose(movieFile);
 
-printf("\nProcessed file %s and parsed data for %d movies \n\n", filePath, movieCount);
+    int choice;
+    while (1) {
+        printMenu();
+        if (scanf("%d", &choice) != 1) return;
 
-int choice;
-while (1) {
-    printMenu();
-    if (scanf("%d", &choice) != 1) return;
+        if (choice == 4) break;
+        if (choice < 1 || choice > 4) {
+            printf("You've entered an incorrect choice, try again \n\n");
+            continue;
 
-    if (choice == 4) break;
-    if (choice < 1 || choice > 4) {
-        printf("You've entered an incorrect choice, try again \n\n");
-        continue;
-
+        }
+        if (choice == 1){
+            printf("Enter the year you want to see movies: ");
+            int year; scanf("%d", &year);
+            printf("\n");
+        } else if (choice == 2) {
+            printf("\n");
+        } else if (choice == 3){
+            printf("Enter the language for which you want to see movies: ");
+            char lang[64]; scanf("%63s", lang);
+            printf("\n");
+        }
     }
-    if (choice == 1){
-        printf("Enter the year you want to see movies: ");
-        int year; scanf("%d", &year);
-        printf("\n");
-    } else if (choice == 2) {
-        printf("\n");
-    } else if (choice == 3){
-        printf("Enter the language for which you want to see movies: ");
-        char lang[64]; scanf("%63s", lang);
-        printf("\n");
-    }
-}
     
-
 }
 /**
 *
 */
 int main ( int argc, char **argv ){
-if (argc < 2)
-{
-printf("You must provide the name of the file to process\n");
-printf("Example usage: ./movies movies.csv\n");
-return EXIT_FAILURE;
+if (argc < 2){
+    printf("You must provide the name of the file to process\n");
+    printf("Example usage: ./movies movies.csv\n");
+    return EXIT_FAILURE;
 }
 processMovieFile(argv[1]);
 return EXIT_SUCCESS;
