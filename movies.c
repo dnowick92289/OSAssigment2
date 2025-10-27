@@ -12,6 +12,75 @@ struct movie {
     struct movie *next;
 };
 
+#include <string.h>
+#include <ctype.h>
+
+static char *dupstr(const char *s) {
+    char *p = malloc(strlen(s) + 1);
+    strcpy(p, s);
+    return p;
+}
+
+static void parseLanguages(const char *src, char *out[], int *count) {
+    *count = 0;
+    size_t n =strlen(src);
+    if (n < 2 || src[0] != '[' || src[n-1] != ']')return;
+
+    char *buf = dupstr(src + 1);
+    buf[n-2] = '\0';
+
+    char *save = NULL;
+    char *tok = strtok_r(buf, ";", &save);
+    while (tok && *count < MAX_LANGS) {
+        while (isspace((unsigned char)*tok)) tok++;
+        char *end = tok + strlen(tok) - 1;
+        while (end >= tok && isspace((unsigned char)*end)) *end-- = '\0';
+
+        // cap to MAX_LANG_LEN (assignment says max 20)
+        size_t L = strlen(tok);
+        if (L > MAX_LANG_LEN) L = MAX_LANG_LEN;
+
+        char *p = malloc(L + 1);
+        if (!p) { perror("malloc"); exit(1); }
+        strncpy(p, tok, L);
+        p[L] = '\0';
+
+        out[(*count)++] = p;
+        tok = strtok_r(NULL, ";", &save);
+    }
+    free(buf);
+}
+// CSV columns: Title,Year,Languages,Rating
+static struct movie *parseLineToMovie(const char *lineIn) {
+    char *line = dupstr(lineIn); // make writable for strtok_r
+    char *save = NULL;
+
+    char *title = strtok_r(line, ",", &save);
+    char *year  = strtok_r(NULL, ",", &save);
+    char *langs = strtok_r(NULL, ",", &save);
+    char *rate  = strtok_r(NULL, ",", &save);
+
+    if (!title || !year || !langs || !rate) { free(line); return NULL; }
+
+    struct movie *m = calloc(1, sizeof(*m));
+    if (!m) { perror("calloc"); exit(1); }
+
+    m->title = dupstr(title);
+    m->year = atoi(year);
+    parseLanguages(langs, m->languages, &m->lang_count);
+    m->rating = strtod(rate, NULL);
+    // m->next already NULL from calloc
+
+    free(line);
+    return m;
+}
+
+static void freeMovie(struct movie *m) {
+    if (!m) return;
+    free(m->title);
+    for (int i = 0; i < m->lang_count; i++) free(m->languages[i]);
+    free(m);
+}
 /*
 * Function: processMovieFile
 * Opens a file, reads and prints each line
