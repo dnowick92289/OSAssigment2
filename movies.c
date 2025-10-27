@@ -82,6 +82,14 @@ static void freeMovie(struct movie *m) {
     for (int i = 0; i < m->lang_count; i++) free(m->languages[i]);
     free(m);
 }
+
+static void freeMovieList(struct movie *head) {
+    while (head) {
+        struct movie *next = head->next;
+        freeMovie(head);
+        head = next;
+    }
+}
 /*
 * Function: processMovieFile
 * Opens a file, reads and prints each line
@@ -97,25 +105,25 @@ static void printMenu(void) {
     printf("2. Show highest rated movie for each year\n");
     printf("3. Show the title and year of releae of all movies in a specific language\n");
     printf("4. Exit from the program\n\n");
-    printf("Enter a choice from 1 to 4");
+    printf("Enter a choice from 1 to 4: ");
 }
 
 
 void processMovieFile(char* filePath){
-char *currLine = NULL;
-size_t len = 0;
-ssize_t nread;
-int movieCount = 0;
+    char *currLine = NULL;
+    size_t len = 0;
+    ssize_t nread;
 
-// Open the specified file for reading only
-FILE *movieFile = fopen(filePath, "r");
-if (!movieFile) {
-    perror("fopen");
-    return;
-}
 
-// Read the file and discard header line
-nread = getline(&currLine, &len, movieFile);
+    // Open the specified file for reading only
+    FILE *movieFile = fopen(filePath, "r");
+    if (!movieFile) {
+        perror("fopen");
+        return;
+    }
+
+    // Read the file and discard header line
+    nread = getline(&currLine, &len, movieFile);
     // --- read & discard the header line ---
     if (nread <= 0) {
         free(currLine);
@@ -124,7 +132,22 @@ nread = getline(&currLine, &len, movieFile);
         return;
     }
 
+    // --- build linked list instead of just counting ---
+    struct movie *head = NULL;
+    struct movie *tail = NULL;
+    int movieCount = 0;
+
     while ((nread = getline(&currLine, &len, movieFile)) != -1) {
+        struct movie *m = parseLineToMovie(currLine);
+        if (!m) continue;  // skip if malformed (safety)
+
+        // append to list
+        if (!head) {
+            head = tail = m;
+        } else {
+            tail->next = m;
+            tail = m;
+        }
         movieCount++;
     }
 
@@ -158,6 +181,7 @@ nread = getline(&currLine, &len, movieFile);
         }
     }
     
+    freeMovieList(head);
 }
 /**
 *
