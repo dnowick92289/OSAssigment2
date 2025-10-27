@@ -152,7 +152,24 @@ static void showHighestPerYear(struct movie *head) {
             printf("%d %.1f %s\n", year, bestRating[i], bestMovie[i]->title);
         }
     }
-    printf("\n"); // keep spacing consistent with the sample
+    printf("\n");
+}
+
+static void showByLanguage(struct movie *head, const char *lang) {
+    int found = 0;
+    for (struct movie *m = head; m; m = m->next) {
+        for (int i = 0; i < m->lang_count; i++) {
+            if (strcmp(m->languages[i], lang) == 0) {
+                printf("%d %s\n", m->year, m->title);
+                found = 1;
+                break; // no need to check remaining languages for this movie
+            }
+        }
+    }
+    if (!found) {
+        printf("No data about movies released in %s\n", lang);
+    }
+    printf("\n"); // match sample spacing
 }
 
 
@@ -223,10 +240,11 @@ void processMovieFile(char* filePath){
         } else if (choice == 2) {
             showHighestPerYear(head);
 
-        } else if (choice == 3){
+        } else if (choice == 3) {
             printf("Enter the language for which you want to see movies: ");
-            char lang[64]; scanf("%63s", lang);
-            printf("\n");
+            char lang[64];                 // spec guarantees < 20; 64 is plenty
+            scanf("%63s", lang);           // reads a single token (no spaces)
+            showByLanguage(head, lang);
         }
     }
     
