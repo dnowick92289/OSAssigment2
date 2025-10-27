@@ -108,6 +108,20 @@ static void printMenu(void) {
     printf("Enter a choice from 1 to 4: ");
 }
 
+static void showByYear(struct movie *head, int year) {
+    int found = 0;
+    for (struct movie *m = head; m; m = m->next) {
+        if (m->year == year) {
+            printf("%s\n", m->title);
+            found = 1;
+        }
+    }
+    if (!found) {
+        printf("No data about movies released in the year %d\n", year);
+    }
+    printf("\n"); // keep the blank line like the sample runs
+}
+
 
 void processMovieFile(char* filePath){
     char *currLine = NULL;
@@ -172,6 +186,7 @@ void processMovieFile(char* filePath){
             printf("Enter the year you want to see movies: ");
             int year; scanf("%d", &year);
             printf("\n");
+
         } else if (choice == 2) {
             printf("\n");
         } else if (choice == 3){
