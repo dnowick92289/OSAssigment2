@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h> // for EXIT_SUCCESS and EXIT_FAILURE
+#include <stdlib.h> 
 #include <string.h>
 #include <ctype.h>
 #define MAX_LANGS 5
@@ -14,7 +14,7 @@ struct movie {
     struct movie *next;
 };
 
-/*Helpers for parsing*/
+/*parsing*/
 
 static char *dupstr(const char *s) {
     char *p = malloc(strlen(s) + 1);
