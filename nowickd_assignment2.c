@@ -2,9 +2,12 @@
 #include <stdlib.h> 
 #include <string.h>
 #include <ctype.h>
+
+/* 5 languages per movie and max length of each language*/
 #define MAX_LANGS 5
 #define MAX_LANG_LEN 20
 
+/*singly linked list of movies node*/
 struct movie {
     char *title;
     int year;
@@ -14,14 +17,16 @@ struct movie {
     struct movie *next;
 };
 
-/*parsing*/
+/*parsing helpers*/
 
+/*allocate and anf copy C string*/
 static char *dupstr(const char *s) {
     char *p = malloc(strlen(s) + 1);
     strcpy(p, s);
     return p;
 }
 
+/*parse langugages column from CSV*/
 static void parseLanguages(const char *src, char *out[], int *count) {
     *count = 0;
     size_t n =strlen(src);
@@ -37,7 +42,7 @@ static void parseLanguages(const char *src, char *out[], int *count) {
         char *end = tok + strlen(tok) - 1;
         while (end >= tok && isspace((unsigned char)*end)) *end-- = '\0';
 
-        // cap to MAX_LANG_LEN (assignment says max 20)
+        
         size_t L = strlen(tok);
         if (L > MAX_LANG_LEN) L = MAX_LANG_LEN;
 
@@ -51,9 +56,9 @@ static void parseLanguages(const char *src, char *out[], int *count) {
     }
     free(buf);
 }
-// CSV columns: Title,Year,Languages,Rating
+/*parse one csv row into newly allocated struct movie*/
 static struct movie *parseLineToMovie(const char *lineIn) {
-    char *line = dupstr(lineIn); // make writable for strtok_r
+    char *line = dupstr(lineIn); 
     char *save = NULL;
 
     char *title = strtok_r(line, ",", &save);
@@ -70,12 +75,13 @@ static struct movie *parseLineToMovie(const char *lineIn) {
     m->year = atoi(year);
     parseLanguages(langs, m->languages, &m->lang_count);
     m->rating = strtod(rate, NULL);
-    // m->next already NULL from calloc
+  
 
     free(line);
     return m;
 }
 
+/*free single movie node and all its heap allocated strings*/
 static void freeMovie(struct movie *m) {
     if (!m) return;
     free(m->title);
@@ -83,6 +89,7 @@ static void freeMovie(struct movie *m) {
     free(m);
 }
 
+/*walk down list and free each node*/
 static void freeMovieList(struct movie *head) {
     while (head) {
         struct movie *next = head->next;
@@ -90,16 +97,10 @@ static void freeMovieList(struct movie *head) {
         head = next;
     }
 }
-/*
-* Function: processMovieFile
-* Opens a file, reads and prints each line
-* filePath: path to the file
-*
-* This function shows sample code that opens a file, then in a loop reads and
-prints each line in that file.
-* You can use this code however you want in your Prog Assignment 2.
-*/
 
+/*UI helpers*/
+
+/*print exact menu text*/
 static void printMenu(void) {
     printf("1. Show movies released in the specified year\n");
     printf("2. Show highest rated movie for each year\n");
@@ -108,6 +109,7 @@ static void printMenu(void) {
     printf("Enter a choice from 1 to 4: ");
 }
 
+/*option 1-print all titles by year*/
 static void showByYear(struct movie *head, int year) {
     int found = 0;
     for (struct movie *m = head; m; m = m->next) {
@@ -119,9 +121,10 @@ static void showByYear(struct movie *head, int year) {
     if (!found) {
         printf("No data about movies released in the year %d\n", year);
     }
-    printf("\n"); // keep the blank line like the sample runs
+    printf("\n"); 
 }
 
+/*option 2 print highest rated movie for each year*/
 static void showHighestPerYear(struct movie *head) {
     const int YMIN = 1900, YMAX = 2021;
     const int RANGE = (YMAX - YMIN + 1);
@@ -129,15 +132,15 @@ static void showHighestPerYear(struct movie *head) {
     double bestRating[RANGE];
     struct movie *bestMovie[RANGE];
 
-    // init: no movie for any year yet
+
     for (int i = 0; i < RANGE; i++) {
-        bestRating[i] = -1.0;   // sentinel below valid range [1..10]
+        bestRating[i] = -1.0;   
         bestMovie[i] = NULL;
     }
 
-    // single pass over the list
+
     for (struct movie *m = head; m; m = m->next) {
-        if (m->year < YMIN || m->year > YMAX) continue; // safety per spec
+        if (m->year < YMIN || m->year > YMAX) continue; 
         int idx = m->year - YMIN;
         if (m->rating > bestRating[idx]) {
             bestRating[idx] = m->rating;
@@ -145,7 +148,7 @@ static void showHighestPerYear(struct movie *head) {
         }
     }
 
-    // print results for years we saw at least one movie
+  
     for (int i = 0; i < RANGE; i++) {
         if (bestMovie[i]) {
             int year = YMIN + i;
@@ -155,6 +158,7 @@ static void showHighestPerYear(struct movie *head) {
     printf("\n");
 }
 
+/*option 3 - language searcg*/
 static void showByLanguage(struct movie *head, const char *lang) {
     int found = 0;
     for (struct movie *m = head; m; m = m->next) {
@@ -162,33 +166,38 @@ static void showByLanguage(struct movie *head, const char *lang) {
             if (strcmp(m->languages[i], lang) == 0) {
                 printf("%d %s\n", m->year, m->title);
                 found = 1;
-                break; // no need to check remaining languages for this movie
+                break; 
             }
         }
     }
     if (!found) {
         printf("No data about movies released in %s\n", lang);
     }
-    printf("\n"); // match sample spacing
+    printf("\n"); 
 }
 
+/********main code**********/
 
+
+/*reads csv, builds linked list of struct movie, prints processed file line
+enters interactive menu in inmemory list
+frees list at end*/
 void processMovieFile(char* filePath){
     char *currLine = NULL;
     size_t len = 0;
     ssize_t nread;
 
 
-    // Open the specified file for reading only
+
     FILE *movieFile = fopen(filePath, "r");
     if (!movieFile) {
         perror("fopen");
         return;
     }
 
-    // Read the file and discard header line
+
     nread = getline(&currLine, &len, movieFile);
-    // --- read & discard the header line ---
+   
     if (nread <= 0) {
         free(currLine);
         fclose(movieFile);
@@ -196,16 +205,16 @@ void processMovieFile(char* filePath){
         return;
     }
 
-    // --- build linked list instead of just counting ---
+   
     struct movie *head = NULL;
     struct movie *tail = NULL;
     int movieCount = 0;
 
     while ((nread = getline(&currLine, &len, movieFile)) != -1) {
         struct movie *m = parseLineToMovie(currLine);
-        if (!m) continue;  // skip if malformed (safety)
+        if (!m) continue;  
 
-        // append to list
+     
         if (!head) {
             head = tail = m;
         } else {
@@ -220,7 +229,7 @@ void processMovieFile(char* filePath){
 
     printf("Processed file %s and parsed data for %d movies\n\n", filePath, movieCount);
 
-
+/*interactive menu*/
     int choice;
     while (1) {
         printMenu();
@@ -242,17 +251,16 @@ void processMovieFile(char* filePath){
 
         } else if (choice == 3) {
             printf("Enter the language for which you want to see movies: ");
-            char lang[64];                 // spec guarantees < 20; 64 is plenty
-            scanf("%63s", lang);           // reads a single token (no spaces)
+            char lang[64];                
+            scanf("%63s", lang);           
             showByLanguage(head, lang);
         }
     }
     
     freeMovieList(head);
 }
-/**
-*
-*/
+
+/*program entry point*/
 int main ( int argc, char **argv ){
 if (argc < 2){
     printf("You must provide the name of the file to process\n");
